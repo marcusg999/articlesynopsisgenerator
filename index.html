@@ -134,6 +134,16 @@ input:checked + .slider:before {
   transform: translateX(26px);
 }
 
+.highlighted {
+  background-color: yellow;
+  color: black;
+}
+
+body.night-mode .highlighted {
+  background-color: #f1c40f;
+  color: #333;
+}
+
 @media screen and (max-width: 600px) {
   body {
     padding: 10px;
@@ -171,6 +181,7 @@ const voiceSelect = document.getElementById('voice-select');
 
 let isSpeaking = false;
 let speech = null;
+let currentWordIndex = 0;
 
 generateBtn.addEventListener('click', async () => {
   const input = inputEl.value.trim();
@@ -198,7 +209,7 @@ generateBtn.addEventListener('click', async () => {
     
     const synopsis = generateSynopsis(text);
     
-    synopsisEl.innerText = synopsis;
+    synopsisEl.innerHTML = wrapWordsInSpans(synopsis);
     
     // Enable play button
     playBtn.disabled = false;
@@ -215,13 +226,21 @@ playBtn.addEventListener('click', () => {
   if (isSpeaking) {
     window.speechSynthesis.cancel();
     isSpeaking = false;
+    currentWordIndex = 0;
+    unhighlightAllWords();
   } else {
     const synopsis = synopsisEl.innerText.trim();
     if (synopsis) {
       speech = new SpeechSynthesisUtterance(synopsis);
-      speech.voice = speechSynthesis.getVoices().find(voice => voice.name === voiceSelect.value); 
+      speech.voice = speechSynthesis.getVoices().find(voice => voice.name === voiceSelect.value);
+      speech.onboundary = (event) => {
+        const wordIndex = getWordIndex(event.charIndex);
+        highlightWord(wordIndex);
+      }; 
       speech.onend = () => {
         isSpeaking = false;
+        currentWordIndex = 0;
+        unhighlightAllWords();
       }
       window.speechSynthesis.speak(speech);
       isSpeaking = true;
@@ -250,6 +269,37 @@ function generateSynopsis(text) {
   const synopsis = selectedSentences.join(' ');
 
   return synopsis;
+}
+
+function wrapWordsInSpans(text) {
+  const words = text.split(/\s+/);
+  return words.map((word, index) => `<span data-index="${index}">${word}</span>`).join(' ');
+}
+
+function highlightWord(wordIndex) {
+  unhighlightAllWords();
+  const word = document.querySelector(`[data-index="${wordIndex}"]`);
+  if (word) {
+    word.classList.add('highlighted');
+    currentWordIndex = wordIndex;
+  }
+}
+
+function unhighlightAllWords() {
+  const words = document.querySelectorAll('#synopsis span');
+  words.forEach(word => word.classList.remove('highlighted'));
+}
+
+function getWordIndex(charIndex) {
+  let counter = 0;
+  const spans = document.querySelectorAll('#synopsis span');
+  for (let i = 0; i < spans.length; i++) {
+    if (counter + spans[i].textContent.length > charIndex) {
+      return i;
+    }
+    counter += spans[i].textContent.length + 1;
+  }
+  return spans.length - 1;
 }
 </script>
 </body>
