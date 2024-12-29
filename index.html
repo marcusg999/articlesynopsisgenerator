@@ -136,12 +136,11 @@ input:checked + .slider:before {
 
 .highlighted {
   background-color: yellow;
-  color: black;
+  transition: background-color 0.3s ease;
 }
 
 body.night-mode .highlighted {
-  background-color: #f1c40f;
-  color: #333;
+  background-color: orange;
 }
 
 @media screen and (max-width: 600px) {
@@ -169,7 +168,7 @@ body.night-mode .highlighted {
   <input type="checkbox" id="toggle-mode">
   <span class="slider"></span>
 </label>
-<div id="synopsis"></div>
+<div id="synopsis" contenteditable="true"></div>
 
 <script>
 const inputEl = document.getElementById('input');  
@@ -209,7 +208,7 @@ generateBtn.addEventListener('click', async () => {
     
     const synopsis = generateSynopsis(text);
     
-    synopsisEl.innerHTML = wrapWordsInSpans(synopsis);
+    synopsisEl.innerHTML = wrapWords(synopsis);
     
     // Enable play button
     playBtn.disabled = false;
@@ -228,19 +227,22 @@ playBtn.addEventListener('click', () => {
     isSpeaking = false;
     currentWordIndex = 0;
     unhighlightAllWords();
+    synopsisEl.setAttribute('contenteditable', 'true'); // Enable editing when audio stops
   } else {
-    const synopsis = synopsisEl.innerText.trim();
+    const synopsis = synopsisEl.textContent.trim();
     if (synopsis) {
+      synopsisEl.setAttribute('contenteditable', 'false'); // Disable editing when audio starts
       speech = new SpeechSynthesisUtterance(synopsis);
-      speech.voice = speechSynthesis.getVoices().find(voice => voice.name === voiceSelect.value);
-      speech.onboundary = (event) => {
+      speech.voice = speechSynthesis.getVoices().find(voice => voice.name === voiceSelect.value); 
+      speech.onboundary = event => {
         const wordIndex = getWordIndex(event.charIndex);
         highlightWord(wordIndex);
-      }; 
+      };
       speech.onend = () => {
         isSpeaking = false;
         currentWordIndex = 0;
         unhighlightAllWords();
+        synopsisEl.setAttribute('contenteditable', 'true'); // Enable editing when audio ends
       }
       window.speechSynthesis.speak(speech);
       isSpeaking = true;
@@ -271,35 +273,30 @@ function generateSynopsis(text) {
   return synopsis;
 }
 
-function wrapWordsInSpans(text) {
-  const words = text.split(/\s+/);
-  return words.map((word, index) => `<span data-index="${index}">${word}</span>`).join(' ');
+function wrapWords(text) {
+  return text.split(' ').map(word => `<span>${word}</span>`).join(' ');
+}
+
+function getWordIndex(charIndex) {
+  const synopsis = synopsisEl.textContent;
+  const precedingText = synopsis.substring(0, charIndex);
+  return precedingText.split(' ').length - 1;
 }
 
 function highlightWord(wordIndex) {
   unhighlightAllWords();
-  const word = document.querySelector(`[data-index="${wordIndex}"]`);
-  if (word) {
-    word.classList.add('highlighted');
-    currentWordIndex = wordIndex;
+  const wordElements = synopsisEl.getElementsByTagName('span');
+  if (wordIndex < wordElements.length) {
+    wordElements[wordIndex].classList.add('highlighted');
   }
+  currentWordIndex = wordIndex;
 }
 
 function unhighlightAllWords() {
-  const words = document.querySelectorAll('#synopsis span');
-  words.forEach(word => word.classList.remove('highlighted'));
-}
-
-function getWordIndex(charIndex) {
-  let counter = 0;
-  const spans = document.querySelectorAll('#synopsis span');
-  for (let i = 0; i < spans.length; i++) {
-    if (counter + spans[i].textContent.length > charIndex) {
-      return i;
-    }
-    counter += spans[i].textContent.length + 1;
+  const wordElements = synopsisEl.getElementsByTagName('span');
+  for (let i = 0; i < wordElements.length; i++) {
+    wordElements[i].classList.remove('highlighted');
   }
-  return spans.length - 1;
 }
 </script>
 </body>
