@@ -243,8 +243,8 @@ function generateSynopsis(text) {
   // Sort sentences by length in descending order
   const sortedSentences = filteredSentences.sort((a, b) => b.length - a.length);
 
-  // Take the top 30 sentences or less
-  const selectedSentences = sortedSentences.slice(0, 30);
+  // Take the top 10 sentences or less
+  const selectedSentences = sortedSentences.slice(0, 10);
 
   // Join the selected sentences into a paragraph
   const synopsis = selectedSentences.join(' ');
