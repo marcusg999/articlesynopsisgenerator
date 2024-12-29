@@ -46,7 +46,7 @@ body.night-mode textarea {
   border-color: #555;
 }
 
-button {
+button, select {
   font-size: 18px;
   margin-right: 10px;
   padding: 10px 20px;
@@ -58,7 +58,7 @@ button {
   transition: background-color 0.3s ease;
 }
 
-button:hover {
+button:hover, select:hover {
   background-color: #3498db;
 }
 
@@ -138,7 +138,7 @@ input:checked + .slider:before {
   body {
     padding: 10px;
   }
-  button {
+  button, select {
     font-size: 16px;
     padding: 8px 16px;
   }
@@ -151,6 +151,10 @@ input:checked + .slider:before {
 <textarea id="input"></textarea>
 <button id="generate">Generate Synopsis</button>
 <button id="play">Play/Stop Audio</button>
+<select id="voice-select">
+  <option value="Samantha">Samantha</option>
+  <option value="Aaron">Aaron</option>
+</select>
 <label class="switch">
   <input type="checkbox" id="toggle-mode">
   <span class="slider"></span>
@@ -163,6 +167,7 @@ const generateBtn = document.getElementById('generate');
 const playBtn = document.getElementById('play');
 const synopsisEl = document.getElementById('synopsis');
 const toggleModeCheckbox = document.getElementById('toggle-mode');
+const voiceSelect = document.getElementById('voice-select');
 
 let isSpeaking = false;
 let speech = null;
@@ -214,6 +219,7 @@ playBtn.addEventListener('click', () => {
     const synopsis = synopsisEl.innerText.trim();
     if (synopsis) {
       speech = new SpeechSynthesisUtterance(synopsis);
+      speech.voice = speechSynthesis.getVoices().find(voice => voice.name === voiceSelect.value); 
       speech.onend = () => {
         isSpeaking = false;
       }
@@ -237,8 +243,8 @@ function generateSynopsis(text) {
   // Sort sentences by length in descending order
   const sortedSentences = filteredSentences.sort((a, b) => b.length - a.length);
 
-  // Take the top 10 sentences or less
-  const selectedSentences = sortedSentences.slice(0, 10);
+  // Take the top 30 sentences or less
+  const selectedSentences = sortedSentences.slice(0, 30);
 
   // Join the selected sentences into a paragraph
   const synopsis = selectedSentences.join(' ');
