@@ -191,7 +191,7 @@ generateBtn.addEventListener('click', async () => {
       text = input;  
     }
     
-    const synopsis = await generateSynopsis(text);
+    const synopsis = generateSynopsis(text);
     
     synopsisEl.innerText = synopsis;
     
@@ -227,24 +227,23 @@ toggleModeCheckbox.addEventListener('change', () => {
   document.body.classList.toggle('night-mode');
 });
 
-async function generateSynopsis(text) {
-  // Break text into paragraphs
-  const paragraphs = text.split('\n\n').filter(p => p.trim() !== '');
-  
-  const importantParagraphs = [];
+function generateSynopsis(text) {
+  // Split the article into sentences
+  const sentences = text.match(/[^.!?]+[.!?]+/g);
 
-  for (const paragraph of paragraphs) {
-    const sentences = paragraph.split(/[.!?]/).filter(s => s.trim() !== '');
-    
-    // Find longest 3 sentences in paragraph
-    const longestSentences = sentences.sort((a, b) => b.length - a.length).slice(0, 3);
-    
-    importantParagraphs.push(...longestSentences);
+  // Remove very short sentences
+  const filteredSentences = sentences.filter(sentence => sentence.trim().split(' ').length > 5);
 
-    if (importantParagraphs.length >= 9) break;
-  }
+  // Sort sentences by length in descending order
+  const sortedSentences = filteredSentences.sort((a, b) => b.length - a.length);
 
-  return importantParagraphs.join(' ');
+  // Take the top 10 sentences or less
+  const selectedSentences = sortedSentences.slice(0, 10);
+
+  // Join the selected sentences into a paragraph
+  const synopsis = selectedSentences.join(' ');
+
+  return synopsis;
 }
 </script>
 </body>
